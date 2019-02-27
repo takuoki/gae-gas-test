@@ -36,17 +36,13 @@ func main() {
 }
 
 const (
-	rowStart   = 3
+	doCheckRow    = 1
+	doCheckColumn = 1 // B
+	doCheckText   = "check"
+
+	rowStart   = 4
 	columnMail = 3 // D
 )
-
-var (
-	mailRegexp = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$")
-)
-
-func validateMail(v interface{}) bool {
-	return mailRegexp.MatchString(fmt.Sprintf("%s", v))
-}
 
 func check(c echo.Context) error {
 
@@ -55,8 +51,13 @@ func check(c echo.Context) error {
 		return err
 	}
 
+	if len(sheet) <= doCheckRow || len(sheet[doCheckRow]) <= doCheckColumn ||
+		sheet[doCheckRow][doCheckColumn] != doCheckText {
+		return c.NoContent(http.StatusOK)
+	}
+
 	for i, clms := range sheet {
-		if i < rowStart-1 || len(clms) < columnMail+1 {
+		if i < rowStart || len(clms) <= columnMail {
 			continue
 		}
 		if !validateMail(clms[columnMail]) {
@@ -90,4 +91,12 @@ func getSheet(id, sheet string) ([][]interface{}, error) {
 	}
 
 	return resp.Values, nil
+}
+
+var (
+	mailRegexp = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$")
+)
+
+func validateMail(v interface{}) bool {
+	return mailRegexp.MatchString(fmt.Sprintf("%s", v))
 }
